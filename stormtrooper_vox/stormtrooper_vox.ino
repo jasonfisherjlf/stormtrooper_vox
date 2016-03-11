@@ -51,7 +51,6 @@ uint16_t wait = 500;
 uint16_t dynWait = wait;
 uint64_t triggerTime = 0;
 boolean isTalking = true;
-uint8_t soundNumber = 0;
 
 void loop() {
   // put your main code here, to run repeatedly:
@@ -73,8 +72,6 @@ void loop() {
       dynWait = wait;
       // Turn off voice
       mixer1.gain(1, 0);
-      soundNumber = (soundNumber + 1) % 6;
-//      playMem1.play(sounds[soundNumber]);
       playMem1.play(sounds[random(6)]);
     }
   }  
