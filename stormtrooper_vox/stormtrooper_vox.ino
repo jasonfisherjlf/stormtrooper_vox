@@ -12,19 +12,23 @@
 #include "AudioSample6.h"
 
 // GUItool: begin automatically generated code
-AudioInputAnalog         adc1(A2);       //xy=278,409
-AudioFilterStateVariable filter1;        //xy=478,407
-AudioFilterStateVariable filter2;        //xy=670,412
-AudioPlayMemory          playMem1;       //xy=677,282
-AudioAnalyzePeak         peak1;          //xy=842,527
-AudioMixer4              mixer1;         //xy=935,418
-AudioOutputAnalog        dac1;           //xy=1163,420
-AudioConnection          patchCord1(adc1, 0, filter1, 0);
-AudioConnection          patchCord2(filter1, 0, filter2, 0);
-AudioConnection          patchCord3(filter2, 2, mixer1, 1);
-AudioConnection          patchCord4(filter2, 2, peak1, 0);
+AudioInputAnalog         adc1(A2);     //xy=75.45454406738283,216.3636360168457
+AudioAnalyzeFFT256       fft256_1; //xy=202,342
+AudioFilterBiquad        biquad1;  //xy=264.2727165222168,218.09091663360596
+AudioFilterStateVariable filter1;  //xy=441.00000381469727,225.27273178100586
+AudioPlayMemory          playMem1; //xy=596,90
+AudioFilterStateVariable filter2;  //xy=614,231
+AudioAnalyzePeak         peak1;    //xy=761,335
+AudioMixer4              mixer1;   //xy=854,226
+AudioOutputAnalog        dac1;     //xy=1082,228
+AudioConnection          patchCord1(adc1, biquad1);
+AudioConnection          patchCord2(adc1, fft256_1);
+AudioConnection          patchCord3(biquad1, 0, filter1, 0);
+AudioConnection          patchCord4(filter1, 0, filter2, 0);
 AudioConnection          patchCord5(playMem1, 0, mixer1, 0);
-AudioConnection          patchCord6(mixer1, dac1);
+AudioConnection          patchCord6(filter2, 2, mixer1, 1);
+AudioConnection          patchCord7(filter2, 2, peak1, 0);
+AudioConnection          patchCord8(mixer1, dac1);
 // GUItool: end automatically generated code
 
 const unsigned int* sounds[] = {
