@@ -40,21 +40,46 @@ const unsigned int* sounds[] = {
   AudioSample6
 };
 
+uint16_t wait = 500;
+uint16_t dynWait = wait;
+uint64_t triggerTime = 0;
+boolean isTalking = true;
+uint16_t freqStart = 500;
+uint16_t freqEnd = 1000;
+float fftVal = 0.0;
+float fftPrev = 0.0;
+float fftThresh = 10.0; // 500% spike
+// 172Hz steps: fft256, 43Hz steps: fft1024
+uint16_t fftStart = (freqStart / 172) - 15;
+uint16_t fftEnd = (freqEnd / 172) + 15;
+
 void setup() {
   // put your setup code here, to run once:
   AudioMemory(16);
   mixer1.gain(1, 0);
   mixer1.gain(0, 0.90);
-  filter1.frequency(1100);
+  filter1.frequency(freqEnd);
 //  filter1.resonance(1);
-  filter2.frequency(500);
+  filter2.frequency(freqStart);
   filter2.resonance(0.71);
+  biquad1.setNotch(0, 800, .7);
+//  biquad1.setNotch(1, 400, 100);
+//  biquad1.setNotch(2, 400, 100);
+//  biquad1.setNotch(3, 400, 100);
 }
 
-uint16_t wait = 500;
-uint16_t dynWait = wait;
-uint64_t triggerTime = 0;
-boolean isTalking = true;
+void cancelFeedback() {
+  fftVal = fft256_1.read(0,127);
+  for (int i=0; i<fftEnd; i++) {
+    fftPrev = fftVal;
+    fftVal = fft256_1.read(i);
+    if (fftVal / fftPrev > fftThresh) {
+      mixer1.gain(1, 0.0);
+      delay(100);
+      mixer1.gain(1, 0.85);
+    }
+  }
+}
 
 void loop() {
   // put your main code here, to run repeatedly:
@@ -66,6 +91,9 @@ void loop() {
       triggerTime = millis();
 
       while (isTalking) {
+        if (fft256_1.available()) {
+          cancelFeedback();
+        }
         if (millis() > triggerTime + 2500) { dynWait = 1000; }
         while (!peak1.available());
         if (peak1.read() < 0.2) {
