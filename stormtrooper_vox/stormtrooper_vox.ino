@@ -36,29 +36,33 @@ const unsigned int* sounds[] = {
   AudioSample6
 };
 
+uint16_t wait = 500;
+uint16_t dynWait = wait;
+float voiceGain = 0.85;
+float clickGain = 0.80;
+uint64_t triggerTime = 0;
+boolean isTalking = true;
+float triggerThreshold = 0.05;
+uint16_t freqStart = 750;
+uint16_t freqEnd = 1000;
+
 void setup() {
   // put your setup code here, to run once:
   AudioMemory(16);
   mixer1.gain(1, 0);
-  mixer1.gain(0, 0.90);
-  filter1.frequency(1000);
+  mixer1.gain(0, clickGain);
+  filter1.frequency(freqEnd);
 //  filter1.resonance(1);
-  filter2.frequency(750);
+  filter2.frequency(freqStart);
   filter2.resonance(0.71);
 }
-
-uint16_t wait = 500;
-uint16_t dynWait = wait;
-uint64_t triggerTime = 0;
-boolean isTalking = true;
-float triggerThreshold = 0.05;
 
 void loop() {
   // put your main code here, to run repeatedly:
   if (peak1.available()) {
     if (peak1.read() > triggerThreshold + 0.1) {
       // Turn on voice
-      mixer1.gain(1, 0.85);
+      mixer1.gain(1, voiceGain);
       isTalking = true;
       triggerTime = millis();
 
@@ -74,6 +78,9 @@ void loop() {
       // Turn off voice
       mixer1.gain(1, 0);
       playMem1.play(sounds[random(6)]);
-    }
+      // Clear out the peak reading (in case it picks up the click noise)
+      while (playMem1.isPlaying()) { delay(100); }
+      peak1.read();
+}
   }  
 }
