@@ -40,11 +40,13 @@ const unsigned int* sounds[] = {
   AudioSample6
 };
 
+
 uint16_t wait = 500;
 uint16_t dynWait = wait;
 uint64_t triggerTime = 0;
 boolean isTalking = true;
-uint16_t freqStart = 500;
+float triggerThreshold = 0.05;
+uint16_t freqStart = 750;
 uint16_t freqEnd = 1000;
 float fftVal = 0.0;
 float fftPrev = 0.0;
@@ -56,13 +58,13 @@ uint16_t fftEnd = (freqEnd / 172) + 15;
 void setup() {
   // put your setup code here, to run once:
   AudioMemory(16);
-  mixer1.gain(1, 0);
+  mixer1.gain(1, 0.95);
   mixer1.gain(0, 0.90);
   filter1.frequency(freqEnd);
 //  filter1.resonance(1);
   filter2.frequency(freqStart);
   filter2.resonance(0.71);
-  biquad1.setNotch(0, 800, .7);
+//  biquad1.setNotch(0, 800, .7);
 //  biquad1.setNotch(1, 400, 100);
 //  biquad1.setNotch(2, 400, 100);
 //  biquad1.setNotch(3, 400, 100);
@@ -74,9 +76,13 @@ void cancelFeedback() {
     fftPrev = fftVal;
     fftVal = fft256_1.read(i);
     if (fftVal / fftPrev > fftThresh) {
-      mixer1.gain(1, 0.0);
-      delay(100);
-      mixer1.gain(1, 0.85);
+      biquad1.setNotch(0,i*172, 172);
+//      biquad1.setNotch(1,i*172, 200);
+//      biquad1.setNotch(2,i*172, 200);
+//      biquad1.setNotch(3,i*172, 200);
+//      mixer1.gain(1, 0.0);
+//      delay(100);
+//      mixer1.gain(1, 0.95);
     }
   }
 }
@@ -84,26 +90,26 @@ void cancelFeedback() {
 void loop() {
   // put your main code here, to run repeatedly:
   if (peak1.available()) {
-    if (peak1.read() > 0.2) {
+    if (peak1.read() > triggerThreshold + 0.1) {
       // Turn on voice
-      mixer1.gain(1, 0.85);
+      mixer1.gain(1, 0.95);
       isTalking = true;
       triggerTime = millis();
 
       while (isTalking) {
-        if (fft256_1.available()) {
-          cancelFeedback();
-        }
-        if (millis() > triggerTime + 2500) { dynWait = 1000; }
+//        if (fft256_1.available()) {
+//          cancelFeedback();
+//        }
+        if (millis() > triggerTime + 2500) { dynWait = 750; }
         while (!peak1.available());
-        if (peak1.read() < 0.2) {
+        if (peak1.read() < triggerThreshold) {
           delay(dynWait);
-          if (peak1.read() < 0.2) { isTalking = false; }
+          if (peak1.read() < triggerThreshold) { isTalking = false; }
         }
       }
       dynWait = wait;
       // Turn off voice
-      mixer1.gain(1, 0);
+//      mixer1.gain(1, 0);
       playMem1.play(sounds[random(6)]);
     }
   }  
