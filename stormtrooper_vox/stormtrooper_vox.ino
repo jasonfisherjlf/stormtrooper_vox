@@ -12,19 +12,21 @@
 #include "AudioSample6.h"
 
 // GUItool: begin automatically generated code
-AudioInputAnalog         adc1(A2);       //xy=278,409
-AudioFilterStateVariable filter1;        //xy=478,407
-AudioFilterStateVariable filter2;        //xy=670,412
-AudioPlayMemory          playMem1;       //xy=677,282
-AudioAnalyzePeak         peak1;          //xy=842,527
-AudioMixer4              mixer1;         //xy=935,418
-AudioOutputAnalog        dac1;           //xy=1163,420
-AudioConnection          patchCord1(adc1, 0, filter1, 0);
-AudioConnection          patchCord2(filter1, 0, filter2, 0);
-AudioConnection          patchCord3(filter2, 2, mixer1, 1);
-AudioConnection          patchCord4(filter2, 2, peak1, 0);
-AudioConnection          patchCord5(playMem1, 0, mixer1, 0);
-AudioConnection          patchCord6(mixer1, dac1);
+AudioInputAnalog         adc1(A2);           //xy=278,379
+AudioMixer4              mixerAdc;         //xy=429,398
+AudioFilterStateVariable filter1;        //xy=590,405
+AudioMixer4              mixerVoice;         //xy=727,407
+AudioPlayMemory          playMem1;       //xy=806,313
+AudioMixer4              mixerFinal;         //xy=884,413
+AudioAnalyzePeak         peak1;          //xy=886,480
+AudioOutputAnalog        dac1;           //xy=1017,413
+AudioConnection          patchCord1(adc1, 0, mixerAdc, 0);
+AudioConnection          patchCord2(mixerAdc, 0, filter1, 0);
+AudioConnection          patchCord3(filter1, 1, mixerVoice, 0);
+AudioConnection          patchCord4(mixerVoice, 0, mixerFinal, 1);
+AudioConnection          patchCord5(mixerVoice, peak1);
+AudioConnection          patchCord6(playMem1, 0, mixerFinal, 0);
+AudioConnection          patchCord7(mixerFinal, dac1);
 // GUItool: end automatically generated code
 
 const unsigned int* sounds[] = {
@@ -36,51 +38,54 @@ const unsigned int* sounds[] = {
   AudioSample6
 };
 
-uint16_t wait = 500;
-uint16_t dynWait = wait;
-float voiceGain = 0.85;
-float clickGain = 0.80;
+const uint16_t WAIT = 400;
+const float TALK_START_LVL = 0.15;
+const float TALK_STOP_LVL  = 0.14;
+const float VOICE_LVL = 0.85;
+const float PLAY_LVL  = 0.95;
+
+uint16_t dynWait = WAIT;
 uint64_t triggerTime = 0;
 boolean isTalking = true;
-float triggerThreshold = 0.05;
-uint16_t freqStart = 750;
-uint16_t freqEnd = 1000;
 
 void setup() {
   // put your setup code here, to run once:
   AudioMemory(16);
-  mixer1.gain(1, 0);
-  mixer1.gain(0, clickGain);
-  filter1.frequency(freqEnd);
-//  filter1.resonance(1);
-  filter2.frequency(freqStart);
-  filter2.resonance(0.71);
+  mixerAdc.gain(0, 0.1);
+  mixerVoice.gain(0, 3.0);
+  mixerFinal.gain(1, 0);
+  mixerFinal.gain(0, 0.95);
+  filter1.frequency(1000);
+  filter1.resonance(2.0);
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
   if (peak1.available()) {
-    if (peak1.read() > triggerThreshold + 0.1) {
+    if (peak1.readPeakToPeak() > TALK_START_LVL) {
       // Turn on voice
-      mixer1.gain(1, voiceGain);
+      mixerFinal.gain(1, VOICE_LVL);
       isTalking = true;
       triggerTime = millis();
 
       while (isTalking) {
-        if (millis() > triggerTime + 2500) { dynWait = 1000; }
+        // Increase dynamic wait
+        if (millis() > triggerTime + 1500) { dynWait = 600; }
+        // Check if they have stopped talking
         while (!peak1.available());
-        if (peak1.read() < triggerThreshold) {
+        if (peak1.readPeakToPeak() < TALK_STOP_LVL) {
           delay(dynWait);
-          if (peak1.read() < triggerThreshold) { isTalking = false; }
+          while (!peak1.available());
+          if (peak1.readPeakToPeak() < TALK_STOP_LVL) { isTalking = false; }
         }
       }
-      dynWait = wait;
-      // Turn off voice
-      mixer1.gain(1, 0);
+
+      // RESET to default and play click
+      dynWait = WAIT;
+      mixerFinal.gain(1, 0);
       playMem1.play(sounds[random(6)]);
-      // Clear out the peak reading (in case it picks up the click noise)
-      while (playMem1.isPlaying()) { delay(100); }
+      delay(playMem1.lengthMillis() + 100);
+      // Clear peak1
       peak1.read();
-}
+    }
   }  
 }
