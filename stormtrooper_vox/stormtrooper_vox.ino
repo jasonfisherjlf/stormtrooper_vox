@@ -42,7 +42,7 @@ const uint16_t WAIT = 400;
 const float TALK_START_LVL = 0.15;
 const float TALK_STOP_LVL  = 0.14;
 const float VOICE_LVL = 0.85;
-const float PLAY_LVL  = 0.95;
+const float PLAY_LVL  = 0.80;
 
 uint16_t dynWait = WAIT;
 uint64_t triggerTime = 0;
@@ -51,11 +51,11 @@ boolean isTalking = true;
 void setup() {
   // put your setup code here, to run once:
   AudioMemory(16);
-  mixerAdc.gain(0, 0.1);
-  mixerVoice.gain(0, 3.0);
+  mixerAdc.gain(0, 0.05);
+  mixerVoice.gain(0, 4.0);
   mixerFinal.gain(1, 0);
   mixerFinal.gain(0, 0.95);
-  filter1.frequency(1000);
+  filter1.frequency(1900);
   filter1.resonance(2.0);
 }
 
