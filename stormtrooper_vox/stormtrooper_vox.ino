@@ -50,6 +50,8 @@ boolean isTalking = true;
 
 void setup() {
   // put your setup code here, to run once:
+  pinMode(13, OUTPUT);
+  digitalWrite(13, HIGH);
   AudioMemory(16);
   mixerAdc.gain(0, 0.05);
   mixerVoice.gain(0, 4.0);
